@@ -1,0 +1,147 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DaddyKos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: "Comic Sans MS", "Poppins", sans-serif !important;
+        }
+    </style>
+</head>
+<body class="bg-blue-100 flex flex-col items-center min-h-screen">
+    <!-- Header Section -->
+    <div class="text-center mt-10">
+        <div class="flex justify-center items-center mb-2">
+            <img src="image/logodk.png" alt="Logo" class="w-12 h-12 rounded-full" />
+        </div>
+        <h1 class="text-3xl font-bold text-blue-800">DaddyKos</h1>
+        <h2 class="text-2xl font-semibold text-gray-800 mt-4">Welcome!</h2>
+        <p class="text-gray-600">Find your perfect place to stay</p>
+    </div>
+
+    <!-- Search Section -->
+    <div class="bg-white rounded-lg shadow-lg p-6 w-11/12 max-w-md mt-6">
+        <div class="mb-4">
+            <label class="block text-gray-700 font-medium mb-2">LOCATION</label>
+            <div class="flex items-center border border-gray-300 rounded-lg p-2">
+                <svg class="w-5 h-5 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.243l-4.243-4.243m0 0L9.172 7.757M12 20v-2m0-12v-2m8 8h-2m-12 0H4m8-8V4m0 16v-2"></path>
+                </svg>
+                <input type="text" id="locationSearch" placeholder="Kos" class="w-full outline-none text-gray-600" onkeyup="filterListings()" />
+            </div>
+        </div>
+        <div>
+            <label class="block text-gray-700 font-medium mb-2">PRICE</label>
+            <div class="flex items-center border border-gray-300 rounded-lg p-2">
+                <svg class="w-5 h-5 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-12c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"></path>
+                </svg>
+                <input type="text" placeholder="Price" class="w-full outline-none text-gray-600" />
+            </div>
+        </div>
+    </div>
+
+    <!-- Special Offers Section -->
+    <div class="w-11/12 max-w-md mt-6 mb-6">
+        <h3 class="text-lg font-bold text-blue-800 mb-4">SPECIAL OFFERS</h3>
+        <div id="listingsContainer" class="h-64 overflow-y-auto space-y-4">
+            <!-- Listing 1 -->
+            <div class="listing bg-white rounded-lg shadow-lg flex p-4">
+                <img src="image/bed 1.jpg" alt="Kos Image" class="w-24 h-20 rounded-lg object-cover mr-4" />
+                <div>
+                    <h4 class="text-lg font-semibold text-gray-800">Kosan Harapan Baru</h4>
+                    <p class="text-gray-600 location">Jogio, Kembang</p>
+                    <p class="text-gray-800 font-medium">Rp 750.000 / month</p>
+                </div>
+            </div>
+            <!-- Listing 2 -->
+            <div class="listing bg-white rounded-lg shadow-lg flex p-4">
+                <img src="image/bed 2.jpg" alt="Kos Image" class="w-24 h-20 rounded-lg object-cover mr-4" />
+                <div>
+                    <h4 class="text-lg font-semibold text-gray-800">Kosan Sejahtera</h4>
+                    <p class="text-gray-600 location">Yogyakarta, Sleman</p>
+                    <p class="text-gray-800 font-medium">Rp 800.000 / month</p>
+                </div>
+            </div>
+            <!-- Listing 3 -->
+            <div class="listing bg-white rounded-lg shadow-lg flex p-4">
+                <img src="image/bed 3.png" alt="Kos Image" class="w-24 h-20 rounded-lg object-cover mr-4" />
+                <div>
+                    <h4 class="text-lg font-semibold text-gray-800">Kosan Nyaman</h4>
+                    <p class="text-gray-600 location">Solo, Sukoharjo</p>
+                    <p class="text-gray-800 font-medium">Rp 700.000 / month</p>
+                </div>
+            </div>
+            <!-- Listing 4 -->
+            <div class="listing bg-white rounded-lg shadow-lg flex p-4">
+                <img src="image/bed 4.jpg" alt="Kos Image" class="w-24 h-20 rounded-lg object-cover mr-4" />
+                <div>
+                    <h4 class="text-lg font-semibold text-gray-800">Kosan Asri</h4>
+                    <p class="text-gray-600 location">Semarang, Tembalang</p>
+                    <p class="text-gray-800 font-medium">Rp 900.000 / month</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript for Filtering -->
+    <script>
+        function filterListings() {
+            const searchInput = document.getElementById('locationSearch').value.toLowerCase();
+            const listings = document.querySelectorAll('.listing');
+
+            listings.forEach(listing => {
+                const location = listing.querySelector('.location').textContent.toLowerCase();
+                if (location.includes(searchInput)) {
+                    listing.style.display = 'flex';
+                } else {
+                    listing.style.display = 'none';
+                }
+            });
+        }
+    </script>
+</body>
+</html>
